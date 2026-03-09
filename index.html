@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scavenger Hunt On the Go!</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple:  #7c4dcc;
+    --purple-dark: #5b2d8e;
+    --yellow:  #ffcc00;
+    --white:   #ffffff;
+    --red:     #ff5577;
+    --green:   #22cc88;
+    --blue:    #3bb5f0;
+    --pink:    #ff85c2;
+    --orange:  #ff8c42;
+    --bg:      #f2eeff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(150deg, #eee6ff 0%, #fce8f5 45%, #e8f6ff 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Soft blob background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 15% 25%, rgba(255,133,194,0.22) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 85% 75%, rgba(59,181,240,0.20) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 50% 10%,  rgba(255,204,0,0.15) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .floating-deco {
+    position: fixed;
+    font-size: 2.2rem;
+    opacity: 0.20;
+    animation: floatDeco 8s ease-in-out infinite;
+    pointer-events: none; z-index: 0;
+  }
+  @keyframes floatDeco {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-18px) rotate(8deg); }
+  }
+
+  .screen {
+    display: none; position: relative; z-index: 1;
+    min-height: 100vh;
+    align-items: center; justify-content: center; flex-direction: column;
+    padding: 20px;
+  }
+  .screen.active { display: flex; }
+
+  /* ======== START SCREEN ======== */
+  .start-card {
+    background: white;
+    border-radius: 28px;
+    box-shadow: 0 8px 40px rgba(124,77,204,0.18), 0 2px 8px rgba(0,0,0,0.06);
+    padding: 42px 50px;
+    max-width: 620px; width: 100%;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .start-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 10px;
+    background: linear-gradient(90deg, var(--pink), var(--yellow), var(--blue), var(--green), var(--orange));
+  }
+
+  .luggage-tag {
+    background: var(--purple-dark);
+    color: var(--yellow);
+    font-family: 'Permanent Marker', cursive;
+    font-size: 0.78rem; padding: 5px 16px;
+    border-radius: 20px; display: inline-block;
+    margin-bottom: 14px; letter-spacing: 2px;
+    border: 2px solid var(--yellow);
+  }
+  .title-main {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    color: var(--purple-dark); line-height: 1.1; margin-bottom: 6px;
+  }
+  .title-main span { color: var(--red); }
+  .title-sub {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 1.05rem; color: var(--blue); margin-bottom: 22px;
+  }
+
+  .how-to {
+    background: #f0faff;
+    border-radius: 16px; padding: 14px 18px; margin: 14px 0;
+    font-size: 0.88rem; color: #445; text-align: left;
+    border: 2px solid #bee8fb; line-height: 1.8;
+  }
+  .how-to strong { color: var(--purple-dark); }
+
+  .item-bank-preview {
+    background: #fafafa;
+    border: 2px dashed #d0b8f8;
+    border-radius: 18px; padding: 16px 20px; margin: 18px 0; text-align: left;
+  }
+  .item-bank-preview h3 {
+    font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 2px; color: #9978cc; margin-bottom: 12px; font-weight: 800;
+  }
+  .items-grid-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .item-chip {
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: white; border-radius: 14px; padding: 10px 4px;
+    text-align: center; font-size: 0.78rem; font-weight: 700;
+    box-shadow: 0 4px 0 #4a1e7a;
+  }
+  .item-chip .chip-emoji { font-size: 1.5rem; display: block; margin-bottom: 2px; }
+  .item-chip.bonus {
+    background: linear-gradient(135deg, var(--yellow), #ffaa00);
+    color: var(--purple-dark);
+    box-shadow: 0 4px 0 #c89000;
+    position: relative;
+  }
+  .item-chip.bonus::after {
+    content: '⭐ BONUS';
+    position: absolute; top: -10px; right: -4px;
+    background: var(--red); color: white;
+    font-size: 0.5rem; padding: 2px 6px;
+    border-radius: 6px; font-weight: 900;
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, var(--pink), #ff3366);
+    color: white; font-family: 'Boogaloo', cursive;
+    font-size: 1.6rem; padding: 14px 50px;
+    border: none; border-radius: 50px; cursor: pointer;
+    box-shadow: 0 6px 0 #cc2255;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-top: 10px; letter-spacing: 1px;
+  }
+  .btn-start:hover  { transform: translateY(-3px); box-shadow: 0 9px 0 #cc2255; }
+  .btn-start:active { transform: translateY(4px);  box-shadow: 0 2px 0 #cc2255; }
+
+  /* ======== GAME SCREEN ======== */
+  #gameScreen { flex-direction: column; padding: 16px; }
+
+  .game-header {
+    width: 100%; max-width: 960px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+  }
+  .game-title-sm {
+    font-family: 'Boogaloo', cursive;
+    color: var(--purple-dark); font-size: 1.6rem;
+  }
+  .score-badge {
+    background: var(--yellow); color: var(--purple-dark);
+    font-family: 'Boogaloo', cursive; font-size: 1.4rem;
+    padding: 6px 22px; border-radius: 50px;
+    box-shadow: 0 4px 0 #c89000;
+  }
+
+  .progress-bar-wrap {
+    width: 100%; max-width: 960px;
+    background: rgba(124,77,204,0.12);
+    border-radius: 50px; height: 12px; margin-bottom: 14px;
+    overflow: hidden; border: 2px solid rgba(124,77,204,0.15);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pink), var(--orange), var(--yellow));
+    border-radius: 50px; transition: width 0.5s ease;
+  }
+
+  .game-body {
+    display: flex; gap: 20px; width: 100%; max-width: 960px;
+    align-items: flex-start; flex-wrap: wrap; justify-content: center;
+  }
+
+  /* Camera */
+  .cam-area { flex: 1 1 380px; max-width: 480px; }
+  .cam-frame {
+    background: #2a1a4a; border-radius: 22px; overflow: hidden;
+    position: relative; aspect-ratio: 4/3;
+    box-shadow: 0 12px 40px rgba(124,77,204,0.30), 0 4px 0 rgba(124,77,204,0.15);
+    border: 3px solid rgba(255,255,255,0.6);
+  }
+  #webcam-container { width: 100%; height: 100%; }
+  #webcam-container canvas { width: 100% !important; height: 100% !important; object-fit: cover; display: block; }
+  .cam-overlay { position: absolute; inset: 0; pointer-events: none; }
+  .corner {
+    position: absolute; width: 26px; height: 26px;
+    border-color: var(--yellow); border-style: solid; border-width: 0;
+  }
+  .corner.tl { top:10px;left:10px;border-top-width:3px;border-left-width:3px;border-radius:4px 0 0 0; }
+  .corner.tr { top:10px;right:10px;border-top-width:3px;border-right-width:3px;border-radius:0 4px 0 0; }
+  .corner.bl { bottom:10px;left:10px;border-bottom-width:3px;border-left-width:3px;border-radius:0 0 0 4px; }
+  .corner.br { bottom:10px;right:10px;border-bottom-width:3px;border-right-width:3px;border-radius:0 0 4px 0; }
+
+  /* Detection confidence bar — new! */
+  .confidence-bar-wrap {
+    position: absolute; bottom: 10px; left: 14px; right: 14px;
+    height: 6px; background: rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden;
+  }
+  .confidence-bar-fill {
+    height: 100%; width: 0%; border-radius: 6px;
+    background: linear-gradient(90deg, var(--yellow), var(--green));
+    transition: width 0.15s ease;
+  }
+
+  /* Result overlays */
+  .result-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s; border-radius: 19px;
+  }
+  .result-overlay.show { opacity: 1; }
+  .result-overlay.success { background: rgba(34,204,136,0.90); }
+  .result-overlay.fail    { background: rgba(255,85,119,0.90); }
+
+  .result-x {
+    font-size: 7rem; line-height: 1;
+    font-family: 'Boogaloo', cursive; color: white;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .result-check { font-size: 6rem; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  .result-label {
+    font-family: 'Boogaloo', cursive; font-size: 1.6rem; color: white;
+    text-shadow: 1px 2px 0 rgba(0,0,0,0.15); margin-top: 4px;
+  }
+  @keyframes popIn {
+    0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+    100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+  }
+
+  /* Timer row */
+  .timer-area {
+    display: flex; align-items: center; gap: 14px; margin-top: 12px;
+    background: white; border-radius: 18px; padding: 12px 16px;
+    box-shadow: 0 4px 16px rgba(124,77,204,0.12);
+  }
+  .timer-ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+  .timer-ring-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .timer-ring-bg   { fill: none; stroke: #ede6ff; stroke-width: 5; }
+  .timer-ring-fill {
+    fill: none; stroke: var(--purple); stroke-width: 5; stroke-linecap: round;
+    stroke-dasharray: 170; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+  .timer-number {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'Boogaloo', cursive; font-size: 1.5rem; color: var(--purple-dark);
+  }
+  .current-target-label { flex: 1; }
+  .target-prompt { color: #aaa; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 2px; }
+  .target-item   { font-family: 'Boogaloo', cursive; font-size: 1.7rem; color: var(--purple-dark); }
+  .target-emoji  { font-size: 2rem; }
+  .target-bonus  {
+    background: var(--yellow); color: var(--purple-dark);
+    font-size: 0.65rem; font-weight: 900; padding: 2px 8px;
+    border-radius: 10px; margin-left: 6px; text-transform: uppercase;
+    letter-spacing: 1px; vertical-align: middle;
+  }
+
+  /* Label bar */
+  .label-bar {
+    background: white; border-radius: 12px; padding: 8px 12px; margin-top: 8px;
+    font-size: 0.8rem; color: #aaa; font-weight: 600; min-height: 38px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(124,77,204,0.08);
+  }
+
+  /* Confidence fill indicator inside label bar */
+  .detect-status {
+    font-size: 0.72rem; font-weight: 800; padding: 3px 10px;
+    border-radius: 20px; background: #f0e8ff; color: var(--purple);
+    display: flex; align-items: center; gap: 4px; margin-left: auto;
+  }
+  .detect-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ccc; flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .detect-dot.active { background: var(--green); }
+
+  .label-pill {
+    background: #f0e8ff; border-radius: 20px; padding: 3px 10px;
+    font-size: 0.75rem; color: var(--purple); transition: all 0.2s;
+  }
+  .label-pill.top { background: var(--purple); color: white; font-weight: 800; }
+
+  /* Right panel */
+  .right-panel { flex: 1 1 260px; max-width: 300px; display: flex; flex-direction: column; gap: 14px; }
+  .item-bank-card {
+    background: white; border-radius: 20px; padding: 18px;
+    box-shadow: 0 6px 24px rgba(124,77,204,0.12);
+  }
+  .bank-title {
+    font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 2px; color: #b8a0e0; font-weight: 800; margin-bottom: 12px;
+  }
+  .bank-items { display: flex; flex-direction: column; gap: 8px; }
+  .bank-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 12px;
+    background: #f8f4ff; border: 2px solid #e8dcff;
+    transition: all 0.3s; font-weight: 700;
+    color: #6644aa; font-size: 0.9rem;
+  }
+  .bank-item .b-emoji { font-size: 1.4rem; }
+  .bank-item.current {
+    background: #fff3e0; border-color: var(--orange);
+    color: #c05000;
+    box-shadow: 0 0 0 3px rgba(255,140,66,0.2);
+    animation: pulseBorder 1.5s infinite;
+  }
+  @keyframes pulseBorder {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,140,66,0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(255,140,66,0); }
+  }
+  .bank-item.done-correct {
+    background: #e8fff4; border-color: var(--green);
+    color: #189960; text-decoration: line-through; opacity: 0.75;
+  }
+  .bank-item.done-miss {
+    background: #fff0f3; border-color: var(--red);
+    color: #cc3355; text-decoration: line-through; opacity: 0.65;
+  }
+  .bank-item.upcoming { opacity: 0.4; }
+  .bank-item.bonus-item { border-color: #ffd740; }
+  .status-icon { margin-left: auto; font-size: 0.9rem; }
+
+  /* ======== END SCREEN ======== */
+  .end-card {
+    background: white; border-radius: 28px;
+    box-shadow: 0 12px 50px rgba(124,77,204,0.20);
+    padding: 44px 52px; max-width: 560px; width: 100%;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .end-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 10px;
+    background: linear-gradient(90deg, var(--green), var(--blue), var(--pink), var(--yellow), var(--orange));
+  }
+  .end-title { font-family: 'Boogaloo', cursive; font-size: 2.8rem; color: var(--purple-dark); margin-bottom: 6px; }
+  .final-score-display {
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+    color: var(--yellow); font-family: 'Boogaloo', cursive; font-size: 4rem;
+    border-radius: 22px; padding: 20px; margin: 20px 0;
+    box-shadow: 0 8px 0 #3a1a6a;
+  }
+  .final-score-display .score-label {
+    font-size: 0.75rem; font-family: 'Nunito', sans-serif;
+    color: rgba(255,255,255,0.55); display: block;
+    font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: -4px;
+  }
+  .result-breakdown { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+  .rb-item {
+    background: #f8f4ff; border: 2px solid #e0d0ff;
+    border-radius: 14px; padding: 10px 16px; text-align: center; min-width: 84px;
+  }
+  .rb-item .rb-num { font-family: 'Boogaloo', cursive; font-size: 1.8rem; display: block; }
+  .rb-item .rb-label { font-size: 0.72rem; color: #998; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .rb-item.good .rb-num  { color: var(--green); }
+  .rb-item.bad  .rb-num  { color: var(--red); }
+  .rb-item.bns  .rb-num  { color: var(--orange); }
+  .rank-display {
+    background: #f0f8ff; border-radius: 14px; padding: 14px;
+    margin: 14px 0; font-size: 1rem; font-weight: 800;
+    color: var(--purple-dark); border: 2px solid #bee8fb;
+  }
+  .btn-restart {
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: var(--yellow); font-family: 'Boogaloo', cursive; font-size: 1.5rem;
+    padding: 14px 46px; border: none; border-radius: 50px; cursor: pointer;
+    box-shadow: 0 6px 0 #3a1a6a;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-top: 10px; letter-spacing: 1px;
+  }
+  .btn-restart:hover  { transform: translateY(-3px); box-shadow: 0 9px 0 #3a1a6a; }
+  .btn-restart:active { transform: translateY(4px);  box-shadow: 0 2px 0 #3a1a6a; }
+
+  /* Loading */
+  .loading-screen {
+    position: fixed; inset: 0;
+    background: linear-gradient(150deg, #eee6ff, #fce8f5, #e8f6ff);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px; z-index: 100; transition: opacity 0.6s;
+  }
+  .loading-screen.hidden { opacity: 0; pointer-events: none; }
+  .loading-text { font-family: 'Boogaloo', cursive; color: var(--purple-dark); font-size: 1.8rem; }
+  .loading-sub  { color: #9978cc; font-size: 0.9rem; font-weight: 700; }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 4px solid rgba(124,77,204,0.2); border-top-color: var(--purple);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Countdown */
+  .countdown-overlay {
+    position: fixed; inset: 0;
+    background: rgba(238,230,255,0.95);
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .countdown-overlay.show { opacity: 1; pointer-events: all; }
+  .countdown-num {
+    font-family: 'Boogaloo', cursive; font-size: 9rem;
+    color: var(--purple-dark); text-shadow: 4px 6px 0 rgba(124,77,204,0.2);
+    animation: countPop 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .countdown-sub {
+    color: var(--purple); font-family: 'Nunito', sans-serif;
+    font-size: 1.2rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+  }
+  @keyframes countPop {
+    0%   { transform: scale(2.2); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+
+  /* Confetti */
+  .confetti-piece { position: fixed; animation: confettiFall linear forwards; pointer-events: none; z-index: 999; }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%  { transform: translateX(-10px); }
+    40%  { transform: translateX(10px); }
+    60%  { transform: translateX(-8px); }
+    80%  { transform: translateX(8px); }
+  }
+  .cam-frame.shake  { animation: shake 0.4s ease; }
+  @keyframes bounceUp {
+    0%,100% { transform: translateY(0); }
+    40%  { transform: translateY(-12px); }
+    70%  { transform: translateY(-5px); }
+  }
+  .cam-frame.bounce { animation: bounceUp 0.5s ease; }
+
+  @media (max-width: 600px) {
+    .start-card, .end-card { padding: 28px 18px; }
+    .items-grid-preview { grid-template-columns: repeat(3,1fr); }
+    .game-body { flex-direction: column; }
+    .right-panel { max-width: 100%; width: 100%; }
+    .bank-items { flex-direction: row; flex-wrap: wrap; }
+    .bank-item  { flex: 1 1 120px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background decorations -->
+<div class="floating-deco" style="top:5%;left:3%;animation-delay:0s">✈️</div>
+<div class="floating-deco" style="top:14%;right:5%;animation-delay:1s">📚</div>
+<div class="floating-deco" style="top:68%;left:2%;animation-delay:2s">🎒</div>
+<div class="floating-deco" style="top:80%;right:3%;animation-delay:3s">☕</div>
+<div class="floating-deco" style="top:42%;left:1%;animation-delay:4s">🗺️</div>
+<div class="floating-deco" style="top:52%;right:2%;animation-delay:1.5s">🏫</div>
+<div class="floating-deco" style="top:30%;left:6%;animation-delay:2.5s">⭐</div>
+
+<!-- Loading -->
+<div class="loading-screen" id="loadingScreen">
+  <div style="font-size:3.5rem">🔍</div>
+  <div class="loading-text">Loading AI Model...</div>
+  <div class="spinner"></div>
+  <div class="loading-sub">Allow camera access when prompted</div>
+</div>
+
+<!-- Countdown -->
+<div class="countdown-overlay" id="countdownOverlay">
+  <div class="countdown-num" id="countdownNum">3</div>
+  <div class="countdown-sub">Get Ready!</div>
+</div>
+
+<!-- ===== START SCREEN ===== -->
+<div class="screen active" id="startScreen">
+  <div class="start-card">
+    <div class="luggage-tag">🎒 COLLEGE EDITION</div>
+    <div class="title-main">Scavenger Hunt<br><span>On the Go!</span></div>
+    <div class="title-sub">✈️ Find it fast. Beat the clock. 🏆</div>
+    <div class="how-to">
+      🎯 <strong>How to Play:</strong> Find each item and hold it up to your webcam within <strong>10 seconds!</strong><br>
+      🔒 <strong>Tip:</strong> Hold the item steady — the AI needs a few seconds to confirm it's really there.<br>
+      ⭐ <strong>Bonus:</strong> Chapstick is worth <strong>+3 points</strong> (2 bonus!).
+    </div>
+    <div class="item-bank-preview">
+      <h3>🎒 Item Bank — Find These!</h3>
+      <div class="items-grid-preview">
+        <div class="item-chip"><span class="chip-emoji">👛</span>Wallet</div>
+        <div class="item-chip"><span class="chip-emoji">📱</span>Phone</div>
+        <div class="item-chip"><span class="chip-emoji">🖊️</span>Pen</div>
+        <div class="item-chip"><span class="chip-emoji">🎧</span>Headphones</div>
+        <div class="item-chip"><span class="chip-emoji">📓</span>Notebook</div>
+        <div class="item-chip bonus"><span class="chip-emoji">💄</span>Chapstick</div>
+      </div>
+    </div>
+    <button class="btn-start" onclick="startGame()">🚀 Start Hunt!</button>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div class="screen" id="gameScreen">
+  <div class="game-header">
+    <div class="game-title-sm">🔍 Scavenger Hunt!</div>
+    <div class="score-badge">⭐ Score: <span id="scoreDisplay">0</span></div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="game-body">
+    <!-- Camera -->
+    <div class="cam-area">
+      <div class="cam-frame" id="camFrame">
+        <div id="webcam-container"></div>
+        <div class="cam-overlay">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+          <div class="confidence-bar-wrap">
+            <div class="confidence-bar-fill" id="confidenceBar"></div>
+          </div>
+        </div>
+        <div class="result-overlay success" id="successOverlay" style="display:none">
+          <div class="result-check">✅</div>
+          <div class="result-label" id="successLabel">Found it!</div>
+        </div>
+        <div class="result-overlay fail" id="failOverlay" style="display:none">
+          <div class="result-x">✗</div>
+          <div class="result-label">Time's up!</div>
+        </div>
+      </div>
+
+      <div class="timer-area">
+        <div class="timer-ring-wrap">
+          <svg viewBox="0 0 60 60" width="64" height="64">
+            <circle class="timer-ring-bg" cx="30" cy="30" r="27"/>
+            <circle class="timer-ring-fill" id="timerRing" cx="30" cy="30" r="27"/>
+          </svg>
+          <div class="timer-number" id="timerNum">10</div>
+        </div>
+        <div class="current-target-label">
+          <div class="target-prompt">🎯 Find this item:</div>
+          <div class="target-item" id="targetDisplay">—</div>
+        </div>
+      </div>
+
+      <div class="label-bar" id="labelBar">
+        <span>Scanning camera...</span>
+        <div class="detect-status" id="detectStatus">
+          <div class="detect-dot" id="detectDot"></div>
+          <span id="detectText">Waiting</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checklist panel -->
+    <div class="right-panel">
+      <div class="item-bank-card">
+        <div class="bank-title">📋 Item Checklist</div>
+        <div class="bank-items" id="bankItems"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== END SCREEN ===== -->
+<div class="screen" id="endScreen">
+  <div class="end-card">
+    <div class="end-title" id="endTitle">🏆 Hunt Complete!</div>
+    <div style="font-size:0.95rem;color:#998;margin-bottom:8px;font-weight:700;">Here's how you did:</div>
+    <div class="final-score-display">
+      <span class="score-label">FINAL SCORE</span>
+      <span id="finalScore">0</span> pts
+    </div>
+    <div class="result-breakdown">
+      <div class="rb-item good"><span class="rb-num" id="endCorrect">0</span><span class="rb-label">✅ Found</span></div>
+      <div class="rb-item bad"><span class="rb-num" id="endMissed">0</span><span class="rb-label">❌ Missed</span></div>
+      <div class="rb-item bns"><span class="rb-num" id="endBonus">0</span><span class="rb-label">⭐ Bonus</span></div>
+    </div>
+    <div class="rank-display" id="rankDisplay">Loading rank...</div>
+    <button class="btn-restart" onclick="restartGame()">🔄 Play Again!</button>
+  </div>
+</div>
+
+<!-- TF + Teachable Machine -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+const MODEL_URL       = "https://teachablemachine.withgoogle.com/models/xEX03eRTA/";
+const TIMER_DURATION  = 10;       // seconds per item
+const THRESHOLD       = 0.85;     // confidence needed each frame
+const FRAMES_NEEDED   = 8;        // consecutive frames above threshold to confirm
+// ─────────────────────────────────────────────
+
+const ITEMS = [
+  { name: "Wallet",     emoji: "👛", label: "Wallet",     bonus: false },
+  { name: "Phone",      emoji: "📱", label: "Phone",      bonus: false },
+  { name: "Pen",        emoji: "🖊️", label: "Pen",        bonus: false },
+  { name: "Headphones", emoji: "🎧", label: "Headphones", bonus: false },
+  { name: "Notebook",   emoji: "📓", label: "Notebook",   bonus: false },
+  { name: "Chapstick",  emoji: "💄", label: "Chapstick",  bonus: true  },
+];
+
+function shuffleItems() {
+  const nonBonus = ITEMS.filter(i => !i.bonus).sort(() => Math.random() - 0.5);
+  const bonus    = ITEMS.filter(i =>  i.bonus);
+  const pos = Math.floor(Math.random() * (nonBonus.length + 1));
+  nonBonus.splice(pos, 0, ...bonus);
+  return nonBonus;
+}
+
+// ─── State ───────────────────────────────────
+let model, webcam;
+let gameItems = [];
+let currentIdx   = 0;
+let score        = 0;
+let correctCount = 0;
+let missedCount  = 0;
+let bonusGained  = 0;
+let timerInterval = null;
+let timeLeft      = TIMER_DURATION;
+let roundActive   = false;
+
+// Sustained detection state
+let detectStreak   = 0;   // consecutive frames where top class = target & confidence >= THRESHOLD
+let lastTopClass   = '';
+
+// ─── Init ─────────────────────────────────────
+async function init() {
+  try {
+    model  = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+    webcam = new tmImage.Webcam(480, 360, true);
+    await webcam.setup();
+    await webcam.play();
+    document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+    const ls = document.getElementById("loadingScreen");
+    ls.classList.add("hidden");
+    setTimeout(() => ls.style.display = 'none', 700);
+
+    loopPredictions();
+  } catch(e) {
+    document.querySelector('.loading-text').textContent = "⚠️ Camera Error";
+    document.querySelector('.loading-sub').textContent  = "Please allow camera access and reload.";
+    console.error(e);
+  }
+}
+
+// ─── Prediction loop ──────────────────────────
+async function loopPredictions() {
+  while (true) {
+    if (webcam) webcam.update();
+    if (roundActive && model) {
+      const preds = await model.predict(webcam.canvas);
+      onPredictions(preds);
+    }
+    await tf.nextFrame();
+  }
+}
+
+function onPredictions(preds) {
+  const sorted = [...preds].sort((a, b) => b.probability - a.probability);
+  const top    = sorted[0];
+
+  // Update label pills
+  const labelBar = document.getElementById('labelBar');
+  // Rebuild only the pills (keep the detect-status div last)
+  const pills = sorted.slice(0, 3).map((p, i) =>
+    `<span class="label-pill ${i===0?'top':''}">${p.className} ${Math.round(p.probability*100)}%</span>`
+  ).join('');
+  labelBar.innerHTML = pills + document.getElementById('detectStatus').outerHTML;
+
+  const target = gameItems[currentIdx];
+
+  // ── Sustained detection logic ──────────────
+  // Reset streak whenever the top class changes
+  if (top.className !== lastTopClass) {
+    detectStreak = 0;
+    lastTopClass = top.className;
+  }
+
+  const isTarget    = top.className === target.label;
+  const isConfident = top.probability >= THRESHOLD;
+
+  if (isTarget && isConfident) {
+    detectStreak++;
+  } else {
+    detectStreak = 0;   // wrong item or low confidence → reset
+  }
+
+  // Visual feedback: confidence bar fills based on streak progress
+  const pct = Math.min(100, Math.round((detectStreak / FRAMES_NEEDED) * 100));
+  document.getElementById('confidenceBar').style.width = pct + '%';
+
+  // Detect status indicator
+  const dot  = document.getElementById('detectDot');
+  const txt  = document.getElementById('detectText');
+  if (isTarget && isConfident) {
+    dot.classList.add('active');
+    txt.textContent = `Locking ${pct}%`;
+  } else {
+    dot.classList.remove('active');
+    txt.textContent = 'Scanning';
+  }
+
+  // ── Award point only after sustained detection ──
+  if (detectStreak >= FRAMES_NEEDED) {
+    triggerSuccess();
+  }
+}
+
+// ─── Game flow ────────────────────────────────
+function startGame() {
+  gameItems    = shuffleItems();
+  currentIdx   = 0; score = 0; correctCount = 0; missedCount = 0; bonusGained = 0;
+  document.getElementById('scoreDisplay').textContent = '0';
+  document.getElementById('startScreen').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+  buildBankUI();
+  showCountdown(() => startRound());
+}
+
+function buildBankUI() {
+  const c = document.getElementById('bankItems');
+  c.innerHTML = '';
+  gameItems.forEach((item, i) => {
+    const d = document.createElement('div');
+    d.className = `bank-item ${i===0?'current':'upcoming'} ${item.bonus?'bonus-item':''}`;
+    d.id = `bank-${i}`;
+    d.innerHTML = `
+      <span class="b-emoji">${item.emoji}</span>
+      <span>${item.name}</span>
+      ${item.bonus
+        ? '<span class="status-icon" style="color:#c89000;font-size:0.7rem">⭐+2</span>'
+        : '<span class="status-icon"></span>'}
+    `;
+    c.appendChild(d);
+  });
+}
+
+function showCountdown(cb) {
+  const ov = document.getElementById('countdownOverlay');
+  const n  = document.getElementById('countdownNum');
+  ov.classList.add('show');
+  let c = 3;
+  n.textContent = c;
+  const iv = setInterval(() => {
+    c--;
+    if (c === 0) {
+      n.textContent = '🚀 GO!';
+    } else if (c < 0) {
+      clearInterval(iv);
+      ov.classList.remove('show');
+      cb();
+    } else {
+      n.textContent = c;
+      n.style.animation = 'none';
+      n.offsetHeight; // reflow
+      n.style.animation = 'countPop 0.6s cubic-bezier(0.34,1.56,0.64,1)';
+    }
+  }, 800);
+}
+
+function startRound() {
+  if (currentIdx >= gameItems.length) { endGame(); return; }
+  const item = gameItems[currentIdx];
+  timeLeft = TIMER_DURATION;
+  detectStreak = 0;
+  lastTopClass = '';
+  roundActive  = true;
+
+  document.getElementById('confidenceBar').style.width = '0%';
+
+  const bonusBadge = item.bonus ? '<span class="target-bonus">⭐ BONUS +2</span>' : '';
+  document.getElementById('targetDisplay').innerHTML =
+    `<span class="target-emoji">${item.emoji}</span> ${item.name}${bonusBadge}`;
+
+  document.getElementById('timerNum').textContent = timeLeft;
+  updateRing(timeLeft);
+  hideOverlays();
+  document.getElementById('progressBar').style.width =
+    `${(currentIdx / gameItems.length) * 100}%`;
+  updateBankHighlight();
+
+  const ring = document.getElementById('timerRing');
+  ring.style.stroke = 'var(--purple)';
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timerNum').textContent = timeLeft;
+    updateRing(timeLeft);
+    if      (timeLeft <= 3) ring.style.stroke = 'var(--red)';
+    else if (timeLeft <= 5) ring.style.stroke = 'var(--orange)';
+    if (timeLeft <= 0) { clearInterval(timerInterval); triggerFail(); }
+  }, 1000);
+}
+
+function updateRing(t) {
+  const circ = 2 * Math.PI * 27;
+  document.getElementById('timerRing').style.strokeDashoffset = circ * (1 - t / TIMER_DURATION);
+}
+
+function triggerSuccess() {
+  if (!roundActive) return;
+  roundActive = false;
+  clearInterval(timerInterval);
+  detectStreak = 0;
+  document.getElementById('confidenceBar').style.width = '100%';
+
+  const item = gameItems[currentIdx];
+  const pts  = item.bonus ? 3 : 1;
+  score += pts; correctCount++;
+  if (item.bonus) bonusGained++;
+  document.getElementById('scoreDisplay').textContent = score;
+
+  const so = document.getElementById('successOverlay');
+  so.style.display = 'flex';
+  requestAnimationFrame(() => so.classList.add('show'));
+  document.getElementById('successLabel').textContent =
+    item.bonus ? `🎉 BONUS! +${pts} pts!` : `✅ +1 pt!`;
+
+  const frame = document.getElementById('camFrame');
+  frame.classList.add('bounce');
+  setTimeout(() => frame.classList.remove('bounce'), 500);
+  spawnConfetti(16);
+
+  const b = document.getElementById(`bank-${currentIdx}`);
+  if (b) {
+    b.className = `bank-item done-correct ${item.bonus?'bonus-item':''}`;
+    b.querySelector('.status-icon').textContent = '✅';
+  }
+  setTimeout(nextRound, 1700);
+}
+
+function triggerFail() {
+  if (!roundActive) return;
+  roundActive = false;
+  detectStreak = 0;
+  document.getElementById('confidenceBar').style.width = '0%';
+  missedCount++;
+
+  const fo = document.getElementById('failOverlay');
+  fo.style.display = 'flex';
+  requestAnimationFrame(() => fo.classList.add('show'));
+
+  const frame = document.getElementById('camFrame');
+  frame.classList.add('shake');
+  setTimeout(() => frame.classList.remove('shake'), 400);
+
+  const item = gameItems[currentIdx];
+  const b = document.getElementById(`bank-${currentIdx}`);
+  if (b) {
+    b.className = `bank-item done-miss ${item.bonus?'bonus-item':''}`;
+    b.querySelector('.status-icon').textContent = '❌';
+  }
+  setTimeout(nextRound, 1700);
+}
+
+function nextRound() {
+  currentIdx++;
+  hideOverlays();
+  if (currentIdx >= gameItems.length) endGame();
+  else setTimeout(startRound, 250);
+}
+
+function hideOverlays() {
+  const s = document.getElementById('successOverlay');
+  const f = document.getElementById('failOverlay');
+  s.classList.remove('show'); f.classList.remove('show');
+  setTimeout(() => { s.style.display='none'; f.style.display='none'; }, 200);
+  document.getElementById('confidenceBar').style.width = '0%';
+  const dot = document.getElementById('detectDot');
+  if (dot) dot.classList.remove('active');
+}
+
+function updateBankHighlight() {
+  gameItems.forEach((_, i) => {
+    const el = document.getElementById(`bank-${i}`);
+    if (!el) return;
+    if (i === currentIdx) { el.classList.add('current'); el.classList.remove('upcoming'); }
+  });
+}
+
+function endGame() {
+  roundActive = false; clearInterval(timerInterval);
+  document.getElementById('progressBar').style.width = '100%';
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('endScreen').classList.add('active');
+  document.getElementById('finalScore').textContent  = score;
+  document.getElementById('endCorrect').textContent  = correctCount;
+  document.getElementById('endMissed').textContent   = missedCount;
+  document.getElementById('endBonus').textContent    = bonusGained;
+
+  const pct = correctCount / gameItems.length;
+  let rank;
+  if (pct === 1)       rank = "🌟 Perfect Explorer! You found everything!";
+  else if (pct >= 0.8) rank = "🗺️ Adventure Pro! Nearly a perfect hunt!";
+  else if (pct >= 0.6) rank = "🎒 Campus Navigator — solid run!";
+  else if (pct >= 0.4) rank = "📚 Freshman Explorer — keep practicing!";
+  else                 rank = "😅 Lost on Campus — give it another shot!";
+  document.getElementById('rankDisplay').textContent = rank;
+
+  if (pct > 0.5) spawnConfetti(55);
+}
+
+function restartGame() {
+  document.getElementById('endScreen').classList.remove('active');
+  document.getElementById('startScreen').classList.add('active');
+}
+
+function spawnConfetti(n) {
+  const colors = ['#ffcc00','#ff5577','#7c4dcc','#22cc88','#ff85c2','#ff8c42','#3bb5f0','#fff'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const size = 6 + Math.random() * 9;
+    el.style.cssText = `
+      left:${Math.random()*100}vw; top:0;
+      width:${size}px; height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>0.5?'50%':'3px'};
+      animation-duration:${1.5+Math.random()*2}s;
+      animation-delay:${Math.random()*0.5}s;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
